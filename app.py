@@ -11,6 +11,22 @@ app = Flask(__name__)
 CORS(app)
 
 
+def get_audio_data(id):
+  yt = pytube.YouTube(f'https://youtu.be/{id}')
+
+  formats = yt.streaming_data['adaptiveFormats']
+
+  content_length_with_urls = []
+
+  for format in formats:
+    if 'audio' in format['mimeType']:
+      content_length_with_urls.append({
+        'contentLength': format["contentLength"],
+        'url': format["url"]
+      })
+  return content_length_with_urls
+
+
 @app.route('/')
 def index():
   return {"message": "index page"}
@@ -61,9 +77,9 @@ def audio():
   if id is None:
     return {"message": "id of the youtube video not provided"}
   else:
-    yt = pytube.YouTube(f'https://youtu.be/{id}')
-    url = yt.streams.get_audio_only().url
-    return {"url": url}
+    data = get_audio_data(id)
+    lowest = min(range(len(data)), key=lambda i: data[i]['contentLength'])
+    return data[lowest]
 
 
 app.run(host='0.0.0.0', port=81)
